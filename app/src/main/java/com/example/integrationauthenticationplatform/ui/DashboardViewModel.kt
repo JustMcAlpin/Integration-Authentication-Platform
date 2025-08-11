@@ -42,6 +42,23 @@ class DashboardViewModel(private val repo: CredentialRepo) : ViewModel() {
         }
     }
 
+    // Single key (SendGrid, or anything that gives one token)
+    fun saveApiKey(service: ServiceDef, apiKey: String) {
+        viewModelScope.launch {
+            val json = """{"api_key":"$apiKey"}"""
+            repo.save(service.displayName, "api_key", json)
+            setConnected(serviceIds = listOf(service.id), connected = true)
+        }
+    }
+
+    // Two-part key (Twilio: Key SID + Secret, or Account SID + Auth Token)
+    fun saveApiKeyPair(service: ServiceDef, id: String, secret: String) {
+        viewModelScope.launch {
+            val json = """{"id":"$id","secret":"$secret"}"""
+            repo.save(service.displayName, "api_key", json)
+            setConnected(serviceIds = listOf(service.id), connected = true)
+        }
+    }
 
     private suspend fun refreshFromDb() {
         val existing = repo.all().associateBy { it.service }
@@ -50,13 +67,13 @@ class DashboardViewModel(private val repo: CredentialRepo) : ViewModel() {
         }
     }
 
-    fun saveApiKey(service: ServiceDef, apiKey: String) {
-        viewModelScope.launch {
-            val json = """{"api_key":"$apiKey"}"""
-            repo.save(service.displayName, "api_key", json)
-            setConnected(serviceIds = listOf(service.id), connected = true)
-        }
-    }
+//    fun saveApiKey(service: ServiceDef, apiKey: String) {
+//        viewModelScope.launch {
+//            val json = """{"api_key":"$apiKey"}"""
+//            repo.save(service.displayName, "api_key", json)
+//            setConnected(serviceIds = listOf(service.id), connected = true)
+//        }
+//    }
 
     // Call this after a successful OAuth exchange.
     fun onOAuthSuccess(group: ProviderGroup, credentialJson: String) {

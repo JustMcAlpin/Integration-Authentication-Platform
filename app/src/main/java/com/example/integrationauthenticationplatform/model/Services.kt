@@ -23,27 +23,27 @@ data class ServiceDef(
 )
 
 val SERVICES: List<ServiceDef> = listOf(
-    // Google family (one OAuth can light all of these)
+    // Google family
     ServiceDef("google_calendar","Google Calendar", AuthType.OAuth, ProviderGroup.Google, Icons.Filled.Event),
     ServiceDef("google_drive","Google Drive", AuthType.OAuth, ProviderGroup.Google, Icons.Filled.Folder),
     ServiceDef("google_sheets","Google Sheets", AuthType.OAuth, ProviderGroup.Google, Icons.Filled.InsertDriveFile),
     ServiceDef("gmail","Gmail", AuthType.OAuth, ProviderGroup.Google, Icons.Filled.Email),
     ServiceDef("youtube","YouTube", AuthType.OAuth, ProviderGroup.Google, Icons.Filled.VideoLibrary),
 
-    // Microsoft family (one OAuth lights these)
+    // Microsoft family
     ServiceDef("ms_calendar","Office 365 Calendar", AuthType.OAuth, ProviderGroup.Microsoft, Icons.Filled.Event),
     ServiceDef("outlook","Office 365 Mail (Outlook)", AuthType.OAuth, ProviderGroup.Microsoft, Icons.Filled.Email),
     ServiceDef("onedrive","OneDrive", AuthType.OAuth, ProviderGroup.Microsoft, Icons.Filled.Cloud),
 
-    // API‑key
-    ServiceDef("twilio","Twilio", AuthType.ApiKey, ProviderGroup.ApiKeyOnly, Icons.Filled.Link),
+    // API-key services
     ServiceDef("sendgrid","SendGrid", AuthType.ApiKey, ProviderGroup.ApiKeyOnly, Icons.Filled.Link),
+    ServiceDef("twilio","Twilio", AuthType.ApiKey, ProviderGroup.ApiKeyOnly, Icons.Filled.Link),
 
-    // Socials (show architecture, usually need app approval)
+    // Socials (stubbed; need app approval)
     ServiceDef("instagram","Instagram (Meta)", AuthType.OAuth, ProviderGroup.Social, Icons.Filled.Link, requiresApproval = true),
     ServiceDef("tiktok","TikTok", AuthType.OAuth, ProviderGroup.Social, Icons.Filled.Link, requiresApproval = true),
     ServiceDef("x","X (Twitter)", AuthType.OAuth, ProviderGroup.Social, Icons.Filled.Link, requiresApproval = true),
     ServiceDef("facebook","Facebook", AuthType.OAuth, ProviderGroup.Social, Icons.Filled.Link, requiresApproval = true),
     ServiceDef("linkedin","LinkedIn", AuthType.OAuth, ProviderGroup.Social, Icons.Filled.Link, requiresApproval = true),
-    ServiceDef("snapchat","Snapchat", AuthType.OAuth, ProviderGroup.Social, Icons.Filled.Link, requiresApproval = true),
+    ServiceDef("snapchat","Snapchat", AuthType.OAuth, ProviderGroup.Social, Icons.Filled.Link, requiresApproval = true)
 )

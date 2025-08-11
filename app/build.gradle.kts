@@ -23,12 +23,12 @@ android {
             "\"${project.findProperty("ENCRYPTION_KEY") ?: System.getenv("ENCRYPTION_KEY") ?: ""}\""
         )
 
-        manifestPlaceholders["appAuthRedirectScheme"] = "com.example.integrationauth"
+        manifestPlaceholders["appAuthRedirectScheme"] = "com.googleusercontent.apps.990112477927-oe9qfesiink1jrdasu38h7jh12cck4m9"
     }
 
     buildFeatures {
         compose = true
-        android.buildFeatures.buildConfig = true
+        buildConfig = true
     }
 
     composeOptions { kotlinCompilerExtensionVersion = "1.5.14" }

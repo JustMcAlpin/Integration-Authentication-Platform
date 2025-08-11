@@ -57,12 +57,27 @@ class AuthActivity : ComponentActivity() {
             Uri.parse(authEndpoint),
             Uri.parse(tokenEndpoint)
         )
-        val req = AuthorizationRequest.Builder(
+
+        // take extras and peel off "prompt"
+        val extras = (intent.getSerializableExtra("extraParams") as? HashMap<String, String>)
+            ?.toMutableMap() ?: mutableMapOf()
+        val prompt = extras.remove("prompt")
+
+        android.util.Log.d("Auth123", "clientId=$clientId  redirect=$redirectUri")
+        val builder = AuthorizationRequest.Builder(
             serviceCfg,
             clientId,
             ResponseTypeValues.CODE,
             Uri.parse(redirectUri)
         ).setScopes(scopes)
+
+        // AppAuth wants prompt via a dedicated method
+        if (!prompt.isNullOrBlank()) {
+            builder.setPromptValues(prompt)   // e.g., "consent"
+        }
+
+        val req = builder
+            .setAdditionalParameters(extras)  // e.g., access_type=offline
             .build()
 
         startActivity(authService.getAuthorizationRequestIntent(req))
@@ -80,6 +95,7 @@ class AuthActivity : ComponentActivity() {
 
         authService.performTokenRequest(resp.createTokenExchangeRequest()) { tr: TokenResponse?, tex: AuthorizationException? ->
             if (tex != null || tr == null) {
+                android.util.Log.e("Auth123", "Token exchange failed", tex)
                 setResult(RESULT_CANCELED)
                 finish()
                 return@performTokenRequest

@@ -16,7 +16,7 @@ import com.example.integrationauthenticationplatform.model.ProviderGroup
 import com.example.integrationauthenticationplatform.model.ServiceDef
 import com.example.integrationauthenticationplatform.ui.DashboardScreen
 import com.example.integrationauthenticationplatform.ui.DashboardViewModel
-import com.example.integrationauthenticationplatform.ui.oauth.OAuthConfigs
+import com.example.integrationauthenticationplatform.oauth.OAuthConfigs
 
 class MainActivity : ComponentActivity() {
 
@@ -33,6 +33,7 @@ class MainActivity : ComponentActivity() {
     private val authLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { res ->
+        android.util.Log.d("Auth123", "result=${res.resultCode} extras=${res.data?.extras}")
         if (res.resultCode == RESULT_OK) {
             val groupName = res.data?.getStringExtra("group") ?: return@registerForActivityResult
             val credJson  = res.data?.getStringExtra("credentialJson") ?: return@registerForActivityResult
@@ -59,6 +60,7 @@ class MainActivity : ComponentActivity() {
             else -> return // socials are marked "Needs approval"
         }
         val intent = Intent(this, AuthActivity::class.java).apply {
+            putExtra("extraParams", HashMap(cfg.extraParams))
             putExtra("group", cfg.group.name)
             putExtra("clientId", cfg.clientId)
             putExtra("redirectUri", cfg.redirectUri)

@@ -18,9 +18,11 @@ import com.example.integrationauthenticationplatform.ui.components.IntegrationCa
 @Composable
 fun DashboardScreen(
     vm: DashboardViewModel,
-    onRequestOAuth: (ProviderGroup, ServiceDef) -> Unit, // Activity will start OAuth; call vm.onOAuthSuccess on return
+    onRequestOAuth: (ProviderGroup, ServiceDef) -> Unit,
 ) {
-    val items by vm.services.collectAsState()
+    // 1) don't call this `items` to avoid shadowing LazyGridScope.items(...)
+    val cards by vm.services.collectAsState()
+
     var apiKeyTarget by remember { mutableStateOf<ServiceDef?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -36,7 +38,8 @@ fun DashboardScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(items) { ui ->
+            // now this resolves to the grid's items(...)
+            items(cards) { ui ->
                 IntegrationCard(
                     title = ui.def.displayName,
                     authLabel = if (ui.def.authType == AuthType.OAuth) "OAuth 2.0" else "API Key",
@@ -46,7 +49,7 @@ fun DashboardScreen(
                     onConnect = {
                         when (ui.def.authType) {
                             AuthType.ApiKey -> apiKeyTarget = ui.def
-                            AuthType.OAuth -> onRequestOAuth(ui.def.group, ui.def)
+                            AuthType.OAuth  -> onRequestOAuth(ui.def.group, ui.def)
                         }
                     },
                     onDisconnect = { vm.disconnect(ui.def) },
@@ -59,7 +62,7 @@ fun DashboardScreen(
     apiKeyTarget?.let { target ->
         ApiKeyDialog(
             serviceName = target.displayName,
-            onDismiss = { apiKeyTarget = null },
+            onDismiss = { apiKeyTarget = null },   // <-- use onDismiss
             onSubmit = { key ->
                 vm.saveApiKey(target, key)
                 apiKeyTarget = null
@@ -67,3 +70,4 @@ fun DashboardScreen(
         )
     }
 }
+

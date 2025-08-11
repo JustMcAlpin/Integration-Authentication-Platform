@@ -1,4 +1,4 @@
-package com.example.integrationauthenticationplatform.ui.oauth
+package com.example.integrationauthenticationplatform.oauth
 
 import com.example.integrationauthenticationplatform.model.ProviderGroup
 
@@ -15,8 +15,9 @@ data class OAuthCfg(
 object OAuthConfigs {
     val google = OAuthCfg(
         group = ProviderGroup.Google,
-        clientId = "<GOOGLE_CLIENT_ID>",
-        redirectUri = "com.example.integrationauth:/oauth2redirect",
+        clientId = "990112477927-oe9qfesiink1jrdasu38h7jh12cck4m9.apps.googleusercontent.com",
+        // note the DOUBLE SLASH, host-style redirect
+        redirectUri = "com.googleusercontent.apps.990112477927-oe9qfesiink1jrdasu38h7jh12cck4m9:/oauth2redirect",
         authEndpoint = "https://accounts.google.com/o/oauth2/v2/auth",
         tokenEndpoint = "https://oauth2.googleapis.com/token",
         scopes = listOf(
@@ -26,13 +27,14 @@ object OAuthConfigs {
             "https://www.googleapis.com/auth/spreadsheets.readonly",
             "https://www.googleapis.com/auth/gmail.readonly"
         ),
+        // ask for refresh token
         extraParams = mapOf("access_type" to "offline", "prompt" to "consent")
     )
 
     val microsoft = OAuthCfg(
         group = ProviderGroup.Microsoft,
         clientId = "<MICROSOFT_CLIENT_ID>",
-        redirectUri = "com.example.integrationauth:/oauth2redirect",
+        redirectUri = "com.example.integrationauth://oauth2redirect",
         authEndpoint = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
         tokenEndpoint = "https://login.microsoftonline.com/common/oauth2/v2.0/token",
         scopes = listOf(
