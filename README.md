@@ -1,5 +1,8 @@
 <img width="639" height="1519" alt="veCSuoLvjq" src="https://github.com/user-attachments/assets/3f6830c5-2572-44d6-bb70-58f221113734" />
 
+https://github.com/user-attachments/assets/a4411c92-e383-4d2f-891b-d732001e52ca
+
+
 
 Integration Authentication Platform (Android · Jetpack Compose)
 Lightweight Android demo that authenticates with multiple third-party services and securely stores credentials. It’s built to show capability — simple UI, strong security basics.
@@ -45,29 +48,6 @@ Build & run
 • Sync Gradle and run the app from Android Studio.
 • Tap “Connect” on a Google card to complete consent.
 • Tap “SendGrid” or “Twilio” to enter a key and save.
-
-Demo script (what to show)
-API Key path
-
-Tap SendGrid, paste a key (can be dummy for demo), Save.
-
-Card flips to Connected.
-
-Kill the app and reopen — still Connected (persistence).
-
-Tap Disconnect — back to Disconnected.
-
-OAuth path (Google)
-
-Tap any Google card.
-
-Complete consent.
-
-On success, all Google cards switch to Connected.
-
-Tap Disconnect on any Google card — we remove creds and attempt token revoke.
-
-Note: Social cards (Instagram, TikTok, X, Facebook, LinkedIn, Snapchat) are present for architecture completeness and are marked “Requires approval” in this MVP.
 
 Architecture
 • UI: Jetpack Compose (Material 3)
