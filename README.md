@@ -1,187 +1,118 @@
-Integration Authentication Platform (Android, Jetpack Compose)
-Lightweight demo app that authenticates with multiple third-party services and securely stores credentials. It’s built for capability demo purposes—simple UI, strong security basics.
+Integration Authentication Platform (Android · Jetpack Compose)
+Lightweight Android demo that authenticates with multiple third-party services and securely stores credentials. It’s built to show capability — simple UI, strong security basics.
 
 What it does (MVP)
-Dashboard of “cards” for required services
+• Dashboard of cards for the required services
+• Two auth modes
+– OAuth 2.0: Google (Calendar, Drive, Sheets, Gmail). One successful Google sign-in marks all Google cards “Connected.”
+– API Key: SendGrid and Twilio. Enter a key; we encrypt and store it.
+• AES-256-GCM encryption for all credentials (unique IV per record)
+• Room database for persistence
+• “Disconnect” removes credentials (and best-effort revoke for Google)
+• State persists across app restarts
 
-Two auth modes:
-
-OAuth 2.0: Google (Calendar, Drive, Sheets, Gmail) — one successful Google auth marks all Google cards connected
-
-API Key: SendGrid and Twilio — enter a key and we store it securely
-
-Credentials are encrypted with AES-256-GCM and saved in a local Room DB
-
-“Disconnect” removes credentials (and best-effort revoke for Google)
-
-State persists across app restarts
-
-Quick Start
+Quick start
 Prereqs
-Android Studio (Giraffe+), JDK 11
+• Android Studio (Giraffe or newer), JDK 11
+• Emulator or device with internet
 
-Android emulator or device with internet
+Generate a 32-byte base64 encryption key
+• macOS/Linux: run “openssl rand -base64 32” in a terminal
+• Windows PowerShell: create a 32-byte random array and convert to base64 (any standard guide works)
 
-1) Generate an encryption key (32 bytes, base64)
-macOS/Linux
+Provide the key to Gradle (do not commit it)
+• Add to your user Gradle properties file
+– macOS/Linux: ~/.gradle/gradle.properties
+– Windows: %USERPROFILE%.gradle\gradle.properties
+• Add a line: ENCRYPTION_KEY=your_base64_value
+• The app reads this into BuildConfig.ENCRYPTION_KEY_B64.
 
-openssl rand -base64 32
-Windows PowerShell
-
-$b = New-Object 'System.Byte[]' 32
-[Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b)
-[Convert]::ToBase64String($b)
-2) Provide the key to Gradle
-Add to your user Gradle properties (recommended):
-
-# ~/.gradle/gradle.properties  (Windows: %USERPROFILE%\.gradle\gradle.properties)
-ENCRYPTION_KEY=PASTE_BASE64_STRING_HERE
-We do not commit secrets. The app reads this into BuildConfig.ENCRYPTION_KEY_B64.
-
-3) Configure Google OAuth (one time)
-Create an OAuth 2.0 client in Google Cloud (Installed app – Android / or generic OAuth client).
-
-Note the Client ID (looks like ...apps.googleusercontent.com).
-
-Compute the redirect scheme:
-com.googleusercontent.apps.<client-id-without-the-domain>
+Configure Google OAuth (one-time)
+• Create an OAuth 2.0 client in Google Cloud (Installed App or generic OAuth client).
+• Note the Client ID (looks like: 123456…-xxxx.apps.googleusercontent.com).
+• Compute the redirect scheme: com.googleusercontent.apps.<client-id without “.apps.googleusercontent.com”>
 Example:
-Client ID: 990112477927-xxxx.apps.googleusercontent.com
-Scheme: com.googleusercontent.apps.990112477927-xxxx
+– Client ID: 990112477927-xxxx.apps.googleusercontent.com
+– Scheme: com.googleusercontent.apps.990112477927-xxxx
+• Update the project in two places:
+– Manifest placeholder: set appAuthRedirectScheme to the scheme above.
+– OAuth configs file: set clientId to your full client ID, and redirectUri to “<your scheme>://oauth2redirect”.
 
-Update the project:
+Build & run
+• Sync Gradle and run the app from Android Studio.
+• Tap “Connect” on a Google card to complete consent.
+• Tap “SendGrid” or “Twilio” to enter a key and save.
 
-In app/build.gradle.kts → defaultConfig:
+Demo script (what to show)
+API Key path
 
-manifestPlaceholders["appAuthRedirectScheme"] =
-    "com.googleusercontent.apps.990112477927-xxxx"
-In OAuthConfigs.kt:
+Tap SendGrid, paste a key (can be dummy for demo), Save.
 
-clientId    = "990112477927-xxxx.apps.googleusercontent.com",
-redirectUri = "com.googleusercontent.apps.990112477927-xxxx://oauth2redirect",
-That’s it—no SHA-1 needed for the custom scheme redirect.
+Card flips to Connected.
 
-4) Build & run
-Sync Gradle, run the app
+Kill the app and reopen — still Connected (persistence).
 
-Tap Connect on a Google card → complete consent
+Tap Disconnect — back to Disconnected.
 
-Tap SendGrid or Twilio → paste a dummy key → Save
+OAuth path (Google)
 
-How to Use It (Demo Script)
-Before: open app → all cards are Disconnected
+Tap any Google card.
 
-API Key path:
+Complete consent.
 
-Tap SendGrid → paste a key (can be dummy for demo) → Save
+On success, all Google cards switch to Connected.
 
-Card flips to Connected
+Tap Disconnect on any Google card — we remove creds and attempt token revoke.
 
-Kill the app and reopen → still Connected (persistence ✅)
-
-Tap Disconnect → back to Disconnected
-
-OAuth path (Google):
-
-Tap any Google card → OAuth consent → approve
-
-On success, all Google cards switch to Connected
-
-Tap Disconnect on any one of them → we remove stored creds and best-effort revoke
-
-Social (Instagram/TikTok/X/Facebook/LinkedIn/Snapchat) cards are shown for architecture completeness and are marked Requires approval; they’re disabled in the MVP.
+Note: Social cards (Instagram, TikTok, X, Facebook, LinkedIn, Snapchat) are present for architecture completeness and are marked “Requires approval” in this MVP.
 
 Architecture
-UI: Jetpack Compose (Material 3)
+• UI: Jetpack Compose (Material 3)
+– DashboardScreen renders a grid of IntegrationCards
+– ApiKeyDialog for simple key entry
 
-DashboardScreen → grid of IntegrationCards
+• State: DashboardViewModel
+– Persists/loads via CredentialRepo
+– onOAuthSuccess(group, json) marks all services in a provider group as connected
 
-Small dialogs for API keys (ApiKeyDialog)
+• OAuth: AppAuth (AuthActivity)
+– Builds the authorization request, handles the custom-scheme redirect, exchanges code for tokens, returns a JSON payload to MainActivity
 
-State: DashboardViewModel
+• Storage: Room (AppDb)
+– Table columns: id, service, auth_type, encrypted_data, iv, created_at
 
-Persists/loads via CredentialRepo
+Security details
+• Algorithm: AES-256-GCM
+• Per-record IV randomly generated and stored alongside ciphertext
+• Key handling: 32-byte key supplied via environment/Gradle properties; never committed to source control
+• We encrypt a small JSON blob per service (for OAuth: access token, refresh token when present, expiry epoch, scope; for API keys: the key)
 
-onOAuthSuccess(group, json) marks all services in a provider group as connected
+Key rotation (MVP approach)
+• Generate a new base64 key and update ENCRYPTION_KEY in your Gradle properties.
+• Existing rows won’t decrypt with a new key. In this MVP, the simplest path is: Disconnect each service and reconnect to re-encrypt with the new key.
+• A future migration tool could re-encrypt in place.
 
-OAuth: AppAuth (AuthActivity)
+Disconnect behavior
+• API keys: delete stored credentials and flip card to Disconnected.
+• Google OAuth: delete creds and try to revoke the token.
+• Reconnect works immediately.
 
-Builds the auth request, handles redirect, exchanges code for tokens, returns JSON payload to MainActivity
+Implementation status
+• Google OAuth: end-to-end working; one auth lights multiple Google services.
+• SendGrid: API-key flow working (secure storage).
+• Twilio: API-key flow working (single-field MVP; easily extend to SID + Secret).
+• Microsoft (Calendar/Mail/OneDrive): UI wired; config stubbed for later.
+• Social providers: UI only, marked “Requires approval”.
 
-Storage: Room (AppDb)
-Table (conceptual):
+Known limits (MVP)
+• No external validation of API keys (keeps the demo self-contained).
+• No background token refresh yet; tokens are stored (with refresh_token when consented) but not auto-refreshed.
+• Credentials are local only; there’s no backend in this MVP.
+• Social providers typically require app approval, so they’re intentionally disabled here.
 
-bash
-Copy
-Edit
-id | service | auth_type | encrypted_data | iv | created_at
-Crypto: AES-256-GCM
-
-Key: from ENCRYPTION_KEY (base64)
-
-Unique IV per record (stored alongside ciphertext)
-
-Data stored as JSON then encrypted
-
-Security Details
-Algorithm: AES-256-GCM
-
-Per-record IV randomly generated
-
-Key handling: 32-byte key provided via environment/gradle properties; never committed
-
-What we store (examples, before encryption):
-
-// OAuth
-{
-  "access_token": "ya29....",
-  "refresh_token": "1//0g...",
-  "expires_at": 1735689600,
-  "scope": "https://www.googleapis.com/auth/calendar ..."
-}
-// API Key (SendGrid)
-{ "api_key": "SG.***" }
-Key Rotation (notes)
-Generate a new key and update ENCRYPTION_KEY
-
-Existing rows won’t decrypt with the new key; simplest path in MVP is to Disconnect and Reconnect each service to re-encrypt with the new key
-
-A full migration tool can be added later to re-encrypt in place
-
-Disconnect Behavior
-API Keys: delete stored credentials, flip card to Disconnected
-
-Google OAuth: same as above + best-effort token revoke
-
-Reconnect works immediately
-
-Implementation Status
-Google OAuth: ✅ end-to-end working; one auth lights multiple Google services
-
-SendGrid: ✅ API Key flow working (stores key securely)
-
-Twilio: ✅ API Key flow working (single field; can be extended to SID + Secret)
-
-Microsoft (Calendar/Mail/OneDrive): UI wired; config stubbed for future
-
-Socials: UI only, marked “Requires approval”
-
-Known Limits (MVP)
-We don’t validate API keys against external APIs in the MVP (keeps the demo self-contained)
-
-No background token refresh; tokens are stored (with refresh_token when consented) but not auto-refreshed yet
-
-Credentials are stored locally only (no backend)
-
-Social providers typically require app approval; we’ve left them disabled as examples
-
-Dev Notes
-Compose: Kotlin 2.0+ requires the Compose Compiler plugin (already configured)
-
-Redirect: we use the scheme com.googleusercontent.apps.<client-id-no-domain>://oauth2redirect
-
-Manifest placeholder appAuthRedirectScheme must match the scheme above
-
-.gitignore excludes build outputs and local property files
-
-Screenshots (optional)
+Dev notes
+• Kotlin 2.x with Compose requires the Compose Compiler Gradle plugin (already configured).
+• The custom redirect scheme must match your Google client — example pattern: com.googleusercontent.apps.<client-id-without-domain>://oauth2redirect.
+• The manifest’s appAuthRedirectScheme placeholder must equal that scheme.
+• Do not commit secrets: keep ENCRYPTION_KEY and any API keys out of the repo.
+• .gitignore excludes build outputs and local config.
