@@ -7,12 +7,30 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
+import android.util.Base64
+import androidx.lifecycle.lifecycleScope
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.engine.android.Android
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.forms.submitForm
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.isSuccess
+import io.ktor.http.parameters
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.launch
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.Json
 import net.openid.appauth.AuthorizationException
 import net.openid.appauth.AuthorizationRequest
-import net.openid.appauth.AuthorizationResponse
 import net.openid.appauth.AuthorizationService
 import net.openid.appauth.AuthorizationServiceConfiguration
 import net.openid.appauth.ResponseTypeValues
+import net.openid.appauth.TokenRequest
+import java.security.SecureRandom
 
 class AuthActivity : ComponentActivity() {
 
@@ -22,39 +40,42 @@ class AuthActivity : ComponentActivity() {
     private lateinit var authEndpoint: String
     private lateinit var tokenEndpoint: String
     private lateinit var scopes: List<String>
-    private var started = false
     private lateinit var authService: AuthorizationService
+    private val prefs by lazy { getSharedPreferences("auth_pkce", MODE_PRIVATE) }
+    private val http by lazy {
+        HttpClient(Android) {
+            install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // tiny spinner so it’s not a blank screen while we auth/exchange
         setContent { Surface { CircularProgressIndicator() } }
-
         authService = AuthorizationService(this)
 
-        // Return from browser? Handle immediately.
+        // If launched by redirect (VIEW intent), handle it
         if (intent?.action == Intent.ACTION_VIEW || intent?.data != null) {
-            handleAuthResponse(intent)
+            handleRedirectFromBrowser(intent)
             return
         }
 
-        // Launched from Main with config extras
-        if (!started) {
-            groupName    = intent.getStringExtra("group")!!
-            clientId     = intent.getStringExtra("clientId")!!
-            redirectUri  = intent.getStringExtra("redirectUri")!!
-            authEndpoint = intent.getStringExtra("authEndpoint")!!
-            tokenEndpoint= intent.getStringExtra("tokenEndpoint")!!
-            scopes       = intent.getStringExtra("scopes")!!.split(" ")
-            startAuth()
-            started = true
-        }
+        // Launched fresh from Main with config extras
+        groupName    = intent.getStringExtra("group")!!
+        clientId     = intent.getStringExtra("clientId")!!
+        redirectUri  = intent.getStringExtra("redirectUri")!!
+        authEndpoint = intent.getStringExtra("authEndpoint")!!
+        tokenEndpoint= intent.getStringExtra("tokenEndpoint")!!
+        scopes       = intent.getStringExtra("scopes")!!.split(" ")
+
+        startAuth()
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        handleAuthResponse(intent)
+        // just in case a browser re-delivers; handle again
+        if (intent.action == Intent.ACTION_VIEW || intent.data != null) {
+            handleRedirectFromBrowser(intent)
+        }
     }
 
     override fun onDestroy() {
@@ -67,6 +88,11 @@ class AuthActivity : ComponentActivity() {
             Uri.parse(authEndpoint),
             Uri.parse(tokenEndpoint)
         )
+
+        // generate + stash our own PKCE verifier
+        val codeVerifier = generateCodeVerifier()
+        prefs.edit().putString("pkce_verifier_$groupName", codeVerifier).apply()
+
         val extras = (intent.getSerializableExtra("extraParams") as? HashMap<String, String>)
             ?.toMutableMap() ?: mutableMapOf()
         val prompt = extras.remove("prompt")
@@ -79,66 +105,102 @@ class AuthActivity : ComponentActivity() {
         ).setScopes(scopes)
 
         if (!prompt.isNullOrBlank()) builder.setPromptValues(prompt)
-
-        // carry which provider group we’re doing through redirects
         builder.setState(groupName)
+        builder.setCodeVerifier(codeVerifier) // important
 
         val req = builder.setAdditionalParameters(extras).build()
         android.util.Log.d("Auth123", "AUTH: launch -> ${req.toUri()}")
-        startActivity(authService.getAuthorizationRequestIntent(req))
+        startActivity(AuthorizationService(this).getAuthorizationRequestIntent(req))
     }
 
-    private fun handleAuthResponse(intent: Intent) {
-        android.util.Log.d("Auth123", "AUTH: handleAuthResponse intent=${intent.dataString}")
-        val resp = AuthorizationResponse.fromIntent(intent)
-        val ex = AuthorizationException.fromIntent(intent)
+    private fun handleRedirectFromBrowser(intent: Intent) {
+        val uri = intent.data
+        android.util.Log.d("Auth123", "AUTH: handleAuthResponse intent=${uri?.toString()}")
 
-        if (ex != null || resp == null) {
-            android.util.Log.e("Auth123", "AUTH: error ex=$ex")
-            runOnUiThread { setResult(RESULT_CANCELED); finish() }
-            return
+        if (uri == null) { finishWithCanceled(); return }
+        val code  = uri.getQueryParameter("code") ?: run { finishWithCanceled(); return }
+        val state = uri.getQueryParameter("state") ?: groupName
+
+        val verifier = prefs.getString("pkce_verifier_$state", null)
+        if (verifier.isNullOrBlank()) {
+            android.util.Log.e("Auth123", "AUTH: missing PKCE verifier for state=$state")
+            finishWithCanceled(); return
         }
 
-        authService.performTokenRequest(resp.createTokenExchangeRequest()) { tr, tex ->
+        val serviceCfg = AuthorizationServiceConfiguration(
+            Uri.parse(authEndpoint),
+            Uri.parse(tokenEndpoint)
+        )
+
+        val tokenReq = net.openid.appauth.TokenRequest.Builder(serviceCfg, clientId)
+            .setAuthorizationCode(code)
+            .setRedirectUri(Uri.parse(redirectUri))   // must exactly match auth request
+            .setCodeVerifier(verifier)
+            .build()
+
+        authService.performTokenRequest(tokenReq) { tr, tex ->
             if (tex != null || tr == null) {
-                android.util.Log.e("Auth123", "Token exchange failed", tex)
-                runOnUiThread { setResult(RESULT_CANCELED); finish() }
+                android.util.Log.e("Auth123", "AUTH: token exchange failed", tex)
+                finishWithCanceled()
                 return@performTokenRequest
             }
 
             android.util.Log.d("Auth123", "AUTH: token OK, exp=${tr.accessTokenExpirationTime}")
 
-            val payload = buildString {
-                append("{")
-                append("\"access_token\":\"${tr.accessToken}\",")
-                append("\"refresh_token\":\"${tr.refreshToken ?: ""}\",")
-                append("\"expires_at\":${(tr.accessTokenExpirationTime ?: 0L) / 1000},")
-                append("\"scope\":\"${tr.scope ?: ""}\"")
-                append("}")
-            }
+            val payload = """{
+          "access_token":"${tr.accessToken}",
+          "refresh_token":"${tr.refreshToken ?: ""}",
+          "expires_at":${(tr.accessTokenExpirationTime ?: 0L) / 1000},
+          "scope":"${tr.scope ?: ""}"
+        }""".trimIndent()
 
-            val groupFromState = resp.request?.state ?: groupName
-
-            // hand off directly to MainActivity; finish to avoid white screen
-            val handoff = Intent(this, MainActivity::class.java).apply {
-                addFlags(
-                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                            Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                            Intent.FLAG_ACTIVITY_NEW_TASK   // in case Main isn’t in the task stack
-                )
-                putExtra("group", groupFromState)
+            val handoff = Intent(this@AuthActivity, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                putExtra("group", state)
                 putExtra("credentialJson", payload)
             }
-            android.util.Log.d("Auth123", "AUTH: handoff -> Main group=$groupFromState")
-            runOnUiThread {
-                startActivity(handoff)
-                // also setResult for the ActivityResult path; harmless if unused
-                setResult(RESULT_OK, Intent().apply {
-                    putExtra("group", groupFromState)
-                    putExtra("credentialJson", payload)
-                })
-                finish()
-            }
+            android.util.Log.d("Auth123", "AUTH: handoff -> Main group=$state")
+            startActivity(handoff)
+            finish()
         }
+    }
+
+    @Serializable
+    private data class TokenJson(
+        @SerialName("access_token") val accessToken: String,
+        @SerialName("refresh_token") val refreshToken: String? = null,
+        @SerialName("expires_in")   val expiresIn: Long? = null,
+        val scope: String? = null,
+        @SerialName("id_token")     val idToken: String? = null,
+        @SerialName("token_type")   val tokenType: String? = null
+    )
+
+//    private suspend fun exchangeCodeForTokens(code: String, verifier: String): TokenJson {
+//        val resp: HttpResponse = http.submitForm(
+//            url = tokenEndpoint,
+//            formParameters = parameters {
+//                append("grant_type", "authorization_code")
+//                append("code", code)
+//                append("client_id", clientId)
+//                append("redirect_uri", redirectUri)
+//                append("code_verifier", verifier)
+//            }
+//        )
+//        val body = resp.bodyAsText()
+//        android.util.Log.d("Auth123", "AUTH: token HTTP ${resp.status} body=$body")
+//        if (!resp.status.isSuccess()) {
+//            throw IllegalStateException("Token HTTP ${resp.status}: $body")
+//        }
+//        return Json { ignoreUnknownKeys = true }.decodeFromString(TokenJson.serializer(), body)
+//    }
+
+
+    private fun generateCodeVerifier(): String {
+        val bytes = ByteArray(32).also { java.security.SecureRandom().nextBytes(it) }
+        return Base64.encodeToString(bytes, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
+    }
+
+    private fun finishWithCanceled() {
+        setResult(RESULT_CANCELED); finish()
     }
 }
