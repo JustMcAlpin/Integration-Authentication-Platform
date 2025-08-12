@@ -36,7 +36,7 @@ object OAuthConfigs {
         authEndpoint = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
         tokenEndpoint = "https://login.microsoftonline.com/common/oauth2/v2.0/token",
         scopes = listOf(
-            "offline_access","openid","profile",
+            "offline_access",
             "https://graph.microsoft.com/Files.Read",
             "https://graph.microsoft.com/Calendars.Read",
             "https://graph.microsoft.com/Mail.Read"
