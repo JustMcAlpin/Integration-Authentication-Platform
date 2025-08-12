@@ -1,3 +1,6 @@
+https://github.com/user-attachments/assets/2064b254-ddfc-4851-a7c4-5e39d2582c8b
+
+
 Integration Authentication Platform
 This app connects Google, Microsoft, Twilio, and SendGrid accounts. It uses OAuth 2.0 or API keys, stores credentials securely, and gives users a simple way to see what’s connected.
 
