@@ -15,8 +15,8 @@ SendGrid (API Key)
 
 Credentials are encrypted with AES-256-GCM, and the encryption key is provided via local gradle.properties or env vars. Nothing is hardcoded.
 
-What’s Not
-I didn’t implement Instagram, TikTok, Facebook, LinkedIn, or X. They either require third-party app approval, secret-based auth, or extra backend setup — and this was already a huge scope for a take-home project.
+Excluded Platforms
+Instagram, TikTok, Facebook, LinkedIn, and X weren’t included due to requirements like third-party app approval, backend token handling, or non-standard auth flows. Given the scope and time constraints, I focused on platforms that allowed full integration within the demo’s limits.
 
 Setup
 Clone the repo
