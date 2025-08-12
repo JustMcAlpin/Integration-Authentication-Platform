@@ -63,6 +63,7 @@ class DashboardViewModel(private val repo: CredentialRepo) : ViewModel() {
                 repo.save(service.displayName, "api_key", json)
                 setConnected(listOf(service.id), true)
             }
+            // else: optionally emit a snackbar or the like
         }
     }
 

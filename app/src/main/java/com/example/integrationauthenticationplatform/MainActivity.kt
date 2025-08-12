@@ -1,4 +1,3 @@
-// MainActivity.kt
 package com.example.integrationauthenticationplatform
 
 import android.content.Intent
@@ -14,9 +13,9 @@ import com.example.integrationauthenticationplatform.data.AppDb
 import com.example.integrationauthenticationplatform.data.CredentialRepo
 import com.example.integrationauthenticationplatform.model.ProviderGroup
 import com.example.integrationauthenticationplatform.model.ServiceDef
+import com.example.integrationauthenticationplatform.oauth.OAuthConfigs
 import com.example.integrationauthenticationplatform.ui.DashboardScreen
 import com.example.integrationauthenticationplatform.ui.DashboardViewModel
-import com.example.integrationauthenticationplatform.oauth.OAuthConfigs
 
 class MainActivity : ComponentActivity() {
 
@@ -29,7 +28,7 @@ class MainActivity : ComponentActivity() {
         DashboardViewModel.Factory(repo)
     }
 
-    // handles result from AuthActivity (browser redirect comes back to it)
+    // backup path (still fine to keep)
     private val authLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { res ->
@@ -37,12 +36,17 @@ class MainActivity : ComponentActivity() {
         if (res.resultCode == RESULT_OK) {
             val groupName = res.data?.getStringExtra("group") ?: return@registerForActivityResult
             val credJson  = res.data?.getStringExtra("credentialJson") ?: return@registerForActivityResult
-            vm.onOAuthSuccess(ProviderGroup.valueOf(groupName), credJson)
+            val group = runCatching { ProviderGroup.valueOf(groupName) }.getOrNull() ?: return@registerForActivityResult
+            vm.onOAuthSuccess(group, credJson)
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // also handle if we were launched/resumed with extras right now
+        consumeOAuthIntent()
+
         setContent {
             Surface(color = MaterialTheme.colorScheme.background) {
                 DashboardScreen(
@@ -51,6 +55,24 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        consumeOAuthIntent()
+    }
+
+    private fun consumeOAuthIntent() {
+        val data = intent ?: return
+        val groupName = data.getStringExtra("group") ?: return
+        val credJson  = data.getStringExtra("credentialJson") ?: return
+        val group = runCatching { ProviderGroup.valueOf(groupName) }.getOrNull() ?: return
+
+        android.util.Log.d("Auth123", "Main received group=$groupName, updating UI")
+        vm.onOAuthSuccess(group, credJson)
+
+        // clear so we don’t process again next resume
+        setIntent(Intent(this, javaClass))
     }
 
     private fun handleOAuthRequest(group: ProviderGroup, @Suppress("UNUSED_PARAMETER") def: ServiceDef) {

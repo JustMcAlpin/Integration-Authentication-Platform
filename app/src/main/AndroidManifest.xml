@@ -26,22 +26,19 @@
             </intent-filter>
         </activity>
 
+        <!-- OAuth redirect catcher -->
         <activity
             android:name=".AuthActivity"
             android:exported="true"
             android:launchMode="singleTop">
-
-            <!-- Google: com.googleusercontent.apps.<client-id-no-domain>://oauth2redirect -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
                     android:scheme="${appAuthRedirectScheme}"
-                    android:host="oauth2redirect" />
+                    android:path="/oauth2redirect" />
             </intent-filter>
-
-            <!-- Microsoft: com.example.integrationauth://oauth2redirect (or whatever you chose) -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -51,5 +48,6 @@
                     android:host="oauth2redirect" />
             </intent-filter>
         </activity>
+
     </application>
 </manifest>

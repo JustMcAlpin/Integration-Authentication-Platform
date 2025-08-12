@@ -68,13 +68,8 @@ fun DashboardScreen(
         ApiKeyDialog(
             serviceName = target.displayName,
             onDismiss = { apiKeyTarget = null },
-            onSubmit = { key ->
-                when (target.id) {
-                    "sendgrid" -> vm.connectSendGrid(target, key)
-                    else       -> vm.saveApiKey(target, key) // fallback for any future single-key services
-                }
-                apiKeyTarget = null
-            }
+            onSubmit  = { key -> vm.connectSendGrid(target, key); apiKeyTarget = null },
+            defaultValue = if (BuildConfig.DEBUG) BuildConfig.DEV_SENDGRID_KEY else ""
         )
     }
 
