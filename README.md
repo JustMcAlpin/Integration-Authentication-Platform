@@ -18,8 +18,6 @@ Credentials are encrypted with AES-256-GCM, and the encryption key is provided v
 What’s Not
 I didn’t implement Instagram, TikTok, Facebook, LinkedIn, or X. They either require third-party app approval, secret-based auth, or extra backend setup — and this was already a huge scope for a take-home project.
 
-If you want to see those platforms integrated: pay me. 😇
-
 Setup
 Clone the repo
 
