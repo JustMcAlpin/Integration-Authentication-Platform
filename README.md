@@ -26,6 +26,3 @@ Copy gradle.properties.example → gradle.properties
 Fill in the real values (don’t commit them)
 
 Build and run
-
-Notes
-Some earlier commits included placeholder values that looked like real credentials. They weren’t. GitHub flagged them anyway — they’ve since been removed or whitelisted.
