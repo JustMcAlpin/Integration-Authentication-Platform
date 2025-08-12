@@ -19,15 +19,17 @@ class DashboardViewModel(private val repo: CredentialRepo) : ViewModel() {
     val services: StateFlow<List<ServiceUi>> = _services.asStateFlow()
 
     init {
-        // Start disconnected; you can hydrate from DB later if you like.
         _services.value = SERVICES.map { ServiceUi(it, connected = false) }
         viewModelScope.launch { refreshFromDb() }
     }
 
     fun disconnect(service: ServiceDef) {
         viewModelScope.launch {
-            // best-effort revoke for Google
-            if (service.group == ProviderGroup.Google) {
+            // only revoke Google if no other Google service is still connected
+            val othersUsingGroup = _services.value.any {
+                it.def.group == service.group && it.connected && it.def.id != service.id
+            }
+            if (!othersUsingGroup && service.group == ProviderGroup.Google) {
                 repo.getDecrypted(service.displayName)?.let { json ->
                     val refresh = Regex("\"refresh_token\"\\s*:\\s*\"([^\"]*)\"").find(json)?.groupValues?.get(1)
                     val access  = Regex("\"access_token\"\\s*:\\s*\"([^\"]*)\"").find(json)?.groupValues?.get(1)
@@ -35,6 +37,7 @@ class DashboardViewModel(private val repo: CredentialRepo) : ViewModel() {
                     if (token != null) RevokeClient.revokeGoogle(token)
                 }
             }
+
             repo.remove(service.displayName)
             _services.value = _services.value.map {
                 if (it.def.id == service.id) it.copy(connected = false) else it
@@ -42,45 +45,52 @@ class DashboardViewModel(private val repo: CredentialRepo) : ViewModel() {
         }
     }
 
-    // Single key (SendGrid, or anything that gives one token)
+    // Generic single-key save (fallback)
     fun saveApiKey(service: ServiceDef, apiKey: String) {
         viewModelScope.launch {
             val json = """{"api_key":"$apiKey"}"""
             repo.save(service.displayName, "api_key", json)
-            setConnected(serviceIds = listOf(service.id), connected = true)
+            setConnected(listOf(service.id), true)
         }
     }
 
-    // Two-part key (Twilio: Key SID + Secret, or Account SID + Auth Token)
-    fun saveApiKeyPair(service: ServiceDef, id: String, secret: String) {
+    // SendGrid: validate then store
+    fun connectSendGrid(service: ServiceDef, apiKey: String) {
         viewModelScope.launch {
-            val json = """{"id":"$id","secret":"$secret"}"""
-            repo.save(service.displayName, "api_key", json)
-            setConnected(serviceIds = listOf(service.id), connected = true)
+            val ok = SendGridClient.validate(apiKey)
+            if (ok) {
+                val json = """{"api_key":"$apiKey"}"""
+                repo.save(service.displayName, "api_key", json)
+                setConnected(listOf(service.id), true)
+            }
+        }
+    }
+
+    // Twilio: Account SID + Auth Token
+    fun connectTwilio(service: ServiceDef, accountSid: String, authToken: String) {
+        viewModelScope.launch {
+            val ok = TwilioClient.validate(accountSid, authToken)
+            if (ok) {
+                val json = """{"account_sid":"$accountSid","auth_token":"$authToken"}"""
+                repo.save(service.displayName, "api_key", json)
+                setConnected(listOf(service.id), true)
+            }
         }
     }
 
     private suspend fun refreshFromDb() {
         val existing = repo.all().associateBy { it.service }
-        _services.value = com.example.integrationauthenticationplatform.model.SERVICES.map { s ->
+        _services.value = SERVICES.map { s ->
             ServiceUi(s, connected = existing.containsKey(s.displayName))
         }
     }
 
-//    fun saveApiKey(service: ServiceDef, apiKey: String) {
-//        viewModelScope.launch {
-//            val json = """{"api_key":"$apiKey"}"""
-//            repo.save(service.displayName, "api_key", json)
-//            setConnected(serviceIds = listOf(service.id), connected = true)
-//        }
-//    }
-
-    // Call this after a successful OAuth exchange.
+    // Called after OAuth success to fan out to group services
     fun onOAuthSuccess(group: ProviderGroup, credentialJson: String) {
         viewModelScope.launch {
             val affected = SERVICES.filter { it.group == group }
             affected.forEach { repo.save(it.displayName, "oauth", credentialJson) }
-            setConnected(serviceIds = affected.map { it.id }, connected = true)
+            setConnected(affected.map { it.id }, true)
         }
     }
 

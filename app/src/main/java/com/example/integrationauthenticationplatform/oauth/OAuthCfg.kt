@@ -16,7 +16,6 @@ object OAuthConfigs {
     val google = OAuthCfg(
         group = ProviderGroup.Google,
         clientId = "990112477927-oe9qfesiink1jrdasu38h7jh12cck4m9.apps.googleusercontent.com",
-        // note the DOUBLE SLASH, host-style redirect
         redirectUri = "com.googleusercontent.apps.990112477927-oe9qfesiink1jrdasu38h7jh12cck4m9:/oauth2redirect",
         authEndpoint = "https://accounts.google.com/o/oauth2/v2/auth",
         tokenEndpoint = "https://oauth2.googleapis.com/token",
@@ -33,7 +32,7 @@ object OAuthConfigs {
 
     val microsoft = OAuthCfg(
         group = ProviderGroup.Microsoft,
-        clientId = "<MICROSOFT_CLIENT_ID>",
+        clientId = "76f2bdbf-de19-4844-be6a-1e53f2299a3d",
         redirectUri = "com.example.integrationauth://oauth2redirect",
         authEndpoint = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
         tokenEndpoint = "https://login.microsoftonline.com/common/oauth2/v2.0/token",
@@ -42,6 +41,8 @@ object OAuthConfigs {
             "https://graph.microsoft.com/Files.Read",
             "https://graph.microsoft.com/Calendars.Read",
             "https://graph.microsoft.com/Mail.Read"
-        )
+        ),
+        extraParams = mapOf("prompt" to "select_account")
     )
+
 }

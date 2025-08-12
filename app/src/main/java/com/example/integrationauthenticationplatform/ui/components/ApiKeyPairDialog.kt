@@ -11,12 +11,12 @@ fun ApiKeyPairDialog(
     firstLabel: String,
     secondLabel: String,
     onDismiss: () -> Unit,
-    onSubmit: (first: String, second: String) -> Unit
+    onSubmit: (first: String, second: String) -> Unit,
+    defaultFirst: String = "",          // NEW
+    defaultSecond: String = ""          // NEW
 ) {
-    var first by remember { mutableStateOf("") }
-    var second by remember { mutableStateOf("") }
-
-    val canSave = first.isNotBlank() && second.isNotBlank()
+    var first by remember { mutableStateOf(defaultFirst) }   // NEW
+    var second by remember { mutableStateOf(defaultSecond) } // NEW
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -35,7 +35,7 @@ fun ApiKeyPairDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { onSubmit(first, second) }, enabled = canSave) {
+            TextButton(onClick = { onSubmit(first, second) }, enabled = first.isNotBlank() && second.isNotBlank()) {
                 Text("Save")
             }
         },

@@ -8,9 +8,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 fun ApiKeyDialog(
     serviceName: String,
     onDismiss: () -> Unit,
-    onSubmit: (String) -> Unit
+    onSubmit: (String) -> Unit,
+    defaultValue: String = ""     // NEW
 ) {
-    var value by remember { mutableStateOf("") }
+    var value by remember { mutableStateOf(defaultValue) }  // NEW
 
     AlertDialog(
         onDismissRequest = onDismiss,

@@ -24,6 +24,8 @@ android {
         )
 
         manifestPlaceholders["appAuthRedirectScheme"] = "com.googleusercontent.apps.990112477927-oe9qfesiink1jrdasu38h7jh12cck4m9"
+        manifestPlaceholders["msAuthRedirectScheme"] = "com.example.integrationauth"
+
     }
 
     buildFeatures {
@@ -38,6 +40,34 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     kotlinOptions { jvmTarget = "11" }
+    buildTypes {
+        debug {
+            // Optional dev autofill (read from env or local gradle.properties)
+            buildConfigField(
+                "String", "DEV_TWILIO_SID",
+                "\"${System.getenv("DEV_TWILIO_SID") ?: (project.findProperty("DEV_TWILIO_SID") ?: "")}\""
+            )
+            buildConfigField(
+                "String", "DEV_TWILIO_TOKEN",
+                "\"${System.getenv("DEV_TWILIO_TOKEN") ?: (project.findProperty("DEV_TWILIO_TOKEN") ?: "")}\""
+            )
+            buildConfigField(
+                "String", "DEV_SENDGRID_KEY",
+                "\"${System.getenv("DEV_SENDGRID_KEY") ?: (project.findProperty("DEV_SENDGRID_KEY") ?: "")}\""
+            )
+        }
+        release {
+            isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            // Never ship dev autofill in release
+            buildConfigField("String", "DEV_TWILIO_SID", "\"\"")
+            buildConfigField("String", "DEV_TWILIO_TOKEN", "\"\"")
+            buildConfigField("String", "DEV_SENDGRID_KEY", "\"\"")
+        }
+    }
 }
 
 dependencies {
