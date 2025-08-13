@@ -40,10 +40,10 @@ val SERVICES: List<ServiceDef> = listOf(
     ServiceDef("twilio","Twilio", AuthType.ApiKey, ProviderGroup.ApiKeyOnly, Icons.Filled.Link),
 
     // Socials (stubbed; need app approval)
-    ServiceDef("instagram","Instagram (Meta)", AuthType.OAuth, ProviderGroup.Social, Icons.Filled.Link, requiresApproval = true),
-    ServiceDef("tiktok","TikTok", AuthType.OAuth, ProviderGroup.Social, Icons.Filled.Link, requiresApproval = true),
-    ServiceDef("facebook","Facebook", AuthType.OAuth, ProviderGroup.Social, Icons.Filled.Link, requiresApproval = true),
-    ServiceDef("snapchat","Snapchat", AuthType.OAuth, ProviderGroup.Social, Icons.Filled.Link, requiresApproval = true) ,
-    ServiceDef("x","X (Twitter)",    AuthType.OAuth, ProviderGroup.Social, Icons.Filled.Link /* no requiresApproval */),
-    ServiceDef("linkedin","LinkedIn", AuthType.OAuth, ProviderGroup.Social, Icons.Filled.Link /* no requiresApproval */),
+    ServiceDef("instagram","Instagram (Meta)", AuthType.OAuth, ProviderGroup.Social, Icons.Filled.Link),
+    ServiceDef("tiktok","TikTok", AuthType.OAuth, ProviderGroup.Social, Icons.Filled.Link),
+    ServiceDef("facebook","Facebook", AuthType.OAuth, ProviderGroup.Social, Icons.Filled.Link),
+    ServiceDef("snapchat","Snapchat", AuthType.OAuth, ProviderGroup.Social, Icons.Filled.Link) ,
+    ServiceDef("x","X (Twitter)",    AuthType.OAuth, ProviderGroup.Social, Icons.Filled.Link),
+    ServiceDef("linkedin","LinkedIn", AuthType.OAuth, ProviderGroup.Social, Icons.Filled.Link),
 )

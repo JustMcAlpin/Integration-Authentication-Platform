@@ -45,16 +45,6 @@ object OAuthConfigs {
         extraParams = mapOf("prompt" to "select_account")
     )
 
-    val linkedin = OAuthCfg(
-        group = ProviderGroup.Social,
-        clientId = BuildConfig.LINKEDIN_CLIENT_ID,
-        redirectUri = "com.example.integrationauth://oauth2redirect",
-        authEndpoint = "https://www.linkedin.com/oauth/v2/authorization",
-        tokenEndpoint = "https://www.linkedin.com/oauth/v2/accessToken",
-        scopes = listOf("r_liteprofile", "r_emailaddress", "offline_access")
-        // LinkedIn PKCE for native apps is supported. :contentReference[oaicite:5]{index=5}
-    )
-
     val x = OAuthCfg(
         group = ProviderGroup.Social,
         clientId = BuildConfig.TWITTER_CLIENT_ID,
@@ -66,5 +56,24 @@ object OAuthConfigs {
             "users.read",
             "offline.access" // needed for refresh_token
         )
+    )
+
+    val linkedin = OAuthCfg(
+        group = ProviderGroup.Social,
+        clientId = BuildConfig.LINKEDIN_CLIENT_ID,
+        // placeholder; we override with a runtime loopback like http://127.0.0.1:{port}/callback
+        redirectUri = "http://127.0.0.1/callback",
+        authEndpoint = "https://www.linkedin.com/oauth/native-pkce/authorization",
+        tokenEndpoint = "https://www.linkedin.com/oauth/v2/accessToken",
+        scopes = listOf("r_liteprofile")
+    )
+
+    val demo = OAuthCfg(
+        group = ProviderGroup.Social,
+        clientId = "", // intentionally blank; demo path triggers when blank
+        redirectUri = "com.example.integrationauth://oauth2redirect",
+        authEndpoint = "https://example.com/oauth/authorize",
+        tokenEndpoint = "https://example.com/oauth/token",
+        scopes = listOf("basic")
     )
 }

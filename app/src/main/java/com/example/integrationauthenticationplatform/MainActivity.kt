@@ -86,18 +86,22 @@ class MainActivity : ComponentActivity() {
 
     private fun handleOAuthRequest(group: ProviderGroup, def: ServiceDef) {
         val cfg = when (def.id) {
-            "x"        -> OAuthConfigs.x
-            "linkedin" -> OAuthConfigs.linkedin
+            "x"         -> OAuthConfigs.x
+            "linkedin"  -> OAuthConfigs.demo
+            "instagram" -> OAuthConfigs.demo
+            "tiktok"    -> OAuthConfigs.demo
+            "facebook"  -> OAuthConfigs.demo
+            "snapchat"  -> OAuthConfigs.demo
             else -> when (group) {
                 ProviderGroup.Google    -> OAuthConfigs.google
                 ProviderGroup.Microsoft -> OAuthConfigs.microsoft
-                else -> return
+                else -> OAuthConfigs.demo
             }
         }
         val intent = Intent(this, AuthActivity::class.java).apply {
-            putExtra("serviceId", def.id)                 // per-service state
+            putExtra("serviceId", def.id)
             putExtra("extraParams", HashMap(cfg.extraParams))
-            putExtra("group", cfg.group.name)             // harmless for legacy code path
+            putExtra("group", cfg.group.name)
             putExtra("clientId", cfg.clientId)
             putExtra("redirectUri", cfg.redirectUri)
             putExtra("authEndpoint", cfg.authEndpoint)
@@ -106,4 +110,5 @@ class MainActivity : ComponentActivity() {
         }
         authLauncher.launch(intent)
     }
+
 }

@@ -78,6 +78,11 @@ android {
                 "DEV_SENDGRID_KEY",
                 "\"${System.getenv("DEV_SENDGRID_KEY") ?: (project.findProperty("DEV_SENDGRID_KEY") ?: "")}\""
             )
+            buildConfigField(
+                "boolean",
+                "DEMO_MODE",
+                "true"
+            )   // demo on for debug
         }
         release {
             isMinifyEnabled = true
@@ -88,6 +93,7 @@ android {
             buildConfigField("String", "DEV_TWILIO_SID", "\"\"")
             buildConfigField("String", "DEV_TWILIO_TOKEN", "\"\"")
             buildConfigField("String", "DEV_SENDGRID_KEY", "\"\"")
+            buildConfigField("boolean", "DEMO_MODE", "false")  // demo off for "release"
         }
     }
 }
@@ -120,4 +126,6 @@ dependencies {
     // --- UI extras ---
     implementation("androidx.compose.material:material-icons-extended")
     implementation("com.google.android.material:material:1.12.0")
+
+    implementation("org.nanohttpd:nanohttpd:2.3.1")
 }
