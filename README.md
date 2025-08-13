@@ -1,28 +1,83 @@
-https://github.com/user-attachments/assets/2064b254-ddfc-4851-a7c4-5e39d2582c8b
-
-
 Integration Authentication Platform
-This app connects Google, Microsoft, Twilio, and SendGrid accounts. It uses OAuth 2.0 or API keys, stores credentials securely, and gives users a simple way to see what’s connected.
+This app connects Google, Microsoft, Twilio, and SendGrid accounts using OAuth 2.0 or API keys.
+It stores credentials securely (AES-256-GCM), shows what’s connected in a clean UI, and works with minimal config.
 
-What’s Working
-Google (Calendar, Drive, Sheets, Gmail)
+✅ What's Working
 
-Microsoft (Mail, Calendar, OneDrive)
+Google:
+Calendar, Drive, Sheets, Gmail
 
-Twilio (SID + Auth Token)
+Microsoft:
+Outlook Mail, Calendar, OneDrive
 
-SendGrid (API Key)
+Twilio:
+Account SID + Auth Token
 
-Credentials are encrypted with AES-256-GCM, and the encryption key is provided via local gradle.properties or env vars. Nothing is hardcoded.
+SendGrid:
+API Key only
 
-Excluded Platforms
-Instagram, TikTok, Facebook, LinkedIn, and X weren’t included due to requirements like third-party app approval, backend token handling, or non-standard auth flows. Given the scope and time constraints, I focused on platforms that allowed full integration within the demo’s limits.
+TikTok: 
+v2 Login Kit with PKCE and App Link redirect
 
-Setup
-Clone the repo
+X (Twitter):
+Account SID
+
+All credentials are encrypted at rest.
+The encryption key is provided via gradle.properties or environment variables—nothing is hardcoded.
+
+⚠️ What's Implemented but Not Live
+
+The following platforms are fully wired up (UI, auth flows, token exchange, storage), but not verified end-to-end due to missing dev accounts:
+
+Instagram
+
+Facebook
+
+LinkedIn
+
+
+
+These require extra setup like partner approval, backend flows, or production apps.
+They're all integrated but not fully connected.
+
+🧪 Tests
+
+Includes core unit tests for the DashboardViewModel covering:
+
+OAuth success for one service
+
+OAuth success across a group (e.g. Google)
+
+API key storage
+
+In a production app, I'd cover disconnect logic, error handling, and persistence edge cases—but time.
+
+🚀 Setup
+
+Clone this repo
 
 Copy gradle.properties.example → gradle.properties
 
-Fill in the real values (don’t commit them)
+Add your client IDs and keys
 
-Build and run
+Build & run in Android Studio
+
+Demo mode is enabled in debug builds.
+If any service is missing config, the app fakes credentials for testing purposes.
+
+🧱 Tech Stack
+
+Jetpack Compose
+
+Room
+
+AppAuth (OAuth 2.0)
+
+Ktor (API validation)
+
+AES‑256‑GCM (local encryption)
+
+🫠 Final Note
+
+Yeah, this was a big take-home. I focused on real integrations over dummy mocks, with actual token flows and storage.
+Let me know if you want a walkthrough or deeper dive.
