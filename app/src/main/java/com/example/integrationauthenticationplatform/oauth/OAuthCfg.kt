@@ -59,9 +59,12 @@ object OAuthConfigs {
         group = ProviderGroup.Social,
         clientId = BuildConfig.TWITTER_CLIENT_ID,
         redirectUri = "com.example.integrationauth://oauth2redirect",
-        authEndpoint = "https://twitter.com/i/oauth2/authorize",
+        authEndpoint = "https://x.com/i/oauth2/authorize",
         tokenEndpoint = "https://api.x.com/2/oauth2/token",
-        scopes = listOf("users.read", "tweet.read", "offline.access")
-        // X OAuth2 + PKCE & refresh/revoke endpoints. :contentReference[oaicite:6]{index=6}
+        scopes = listOf(
+            "tweet.read",
+            "users.read",
+            "offline.access" // needed for refresh_token
+        )
     )
 }

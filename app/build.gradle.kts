@@ -10,6 +10,17 @@ android {
     compileSdk = 35
 
     defaultConfig {
+        val twitterClientId: String =
+            (project.findProperty("TWITTER_CLIENT_ID") as String?)    // gradle.properties
+                ?: System.getenv("TWITTER_CLIENT_ID")                 // env var fallback
+                ?: ""
+
+        buildConfigField(
+            "String",
+            "TWITTER_CLIENT_ID",
+            "\"$twitterClientId\""
+        )
+
         applicationId = "com.example.integrationauthenticationplatform"
         minSdk = 26
         targetSdk = 35
@@ -32,11 +43,6 @@ android {
             "String",
             "LINKEDIN_CLIENT_ID",
             "\"${project.findProperty("LINKEDIN_CLIENT_ID") ?: System.getenv("LINKEDIN_CLIENT_ID") ?: ""}\""
-        )
-        buildConfigField(
-            "String",
-            "TWITTER_CLIENT_ID",
-            "\"${project.findProperty("TWITTER_CLIENT_ID") ?: System.getenv("TWITTER_CLIENT_ID") ?: ""}\""
         )
     }
 
