@@ -26,7 +26,6 @@ object OAuthConfigs {
             "https://www.googleapis.com/auth/spreadsheets.readonly",
             "https://www.googleapis.com/auth/gmail.readonly"
         ),
-        // ask for refresh token
         extraParams = mapOf("access_type" to "offline", "prompt" to "consent")
     )
 
@@ -61,12 +60,49 @@ object OAuthConfigs {
     val linkedin = OAuthCfg(
         group = ProviderGroup.Social,
         clientId = BuildConfig.LINKEDIN_CLIENT_ID,
-        // placeholder; we override with a runtime loopback like http://127.0.0.1:{port}/callback
         redirectUri = "http://127.0.0.1/callback",
         authEndpoint = "https://www.linkedin.com/oauth/native-pkce/authorization",
         tokenEndpoint = "https://www.linkedin.com/oauth/v2/accessToken",
         scopes = listOf("r_liteprofile")
     )
+
+    val facebook = OAuthCfg(
+        group = ProviderGroup.Social,
+        clientId = BuildConfig.FACEBOOK_CLIENT_ID,
+        redirectUri = BuildConfig.FACEBOOK_REDIRECT_URI,
+        authEndpoint  = "https://www.facebook.com/${BuildConfig.FACEBOOK_API_VERSION}/dialog/oauth",
+        tokenEndpoint = "https://graph.facebook.com/${BuildConfig.FACEBOOK_API_VERSION}/oauth/access_token",
+        scopes = listOf("public_profile", "email")
+    )
+
+    val instagram = OAuthCfg(
+        group = ProviderGroup.Social,
+        clientId = BuildConfig.FACEBOOK_CLIENT_ID,
+        redirectUri = BuildConfig.FACEBOOK_REDIRECT_URI,
+        authEndpoint  = "https://www.facebook.com/${BuildConfig.FACEBOOK_API_VERSION}/dialog/oauth",
+        tokenEndpoint = "https://graph.facebook.com/${BuildConfig.FACEBOOK_API_VERSION}/oauth/access_token",
+        scopes = listOf("instagram_basic", "pages_show_list")
+    )
+
+    val snapchat = OAuthCfg(
+        group = ProviderGroup.Social,
+        clientId = BuildConfig.SNAPCHAT_CLIENT_ID,
+        redirectUri = BuildConfig.SNAPCHAT_REDIRECT_URI, // HTTPS app link
+        authEndpoint  = "https://accounts.snapchat.com/login/oauth2/authorize",
+        tokenEndpoint = "https://accounts.snapchat.com/login/oauth2/token",
+        scopes = listOf("user.display_name", "user.bitmoji.avatar")
+    )
+
+    val tiktok = OAuthCfg(
+        group = ProviderGroup.Social,
+        clientId = BuildConfig.TIKTOK_CLIENT_KEY,
+        redirectUri = BuildConfig.TIKTOK_REDIRECT_URI,
+        authEndpoint  = "https://www.tiktok.com/v2/auth/authorize/",
+        tokenEndpoint = "https://open.tiktokapis.com/v2/oauth/token/",
+        scopes = listOf("user.info.basic"),
+        extraParams = mapOf("client_key" to BuildConfig.TIKTOK_CLIENT_KEY)
+    )
+
 
     val demo = OAuthCfg(
         group = ProviderGroup.Social,

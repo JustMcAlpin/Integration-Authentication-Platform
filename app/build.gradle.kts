@@ -83,6 +83,18 @@ android {
                 "DEMO_MODE",
                 "true"
             )   // demo on for debug
+            buildConfigField ("String", "FACEBOOK_CLIENT_ID",      "\"\"")
+            buildConfigField ("String", "FACEBOOK_REDIRECT_URI",   "\"https://YOUR_DOMAIN/oauth2redirect\"")
+            buildConfigField ("String", "FACEBOOK_API_VERSION",    "\"v20.0\"")
+            buildConfigField ("String", "SNAPCHAT_CLIENT_ID",      "\"\"")
+            buildConfigField ("String", "SNAPCHAT_REDIRECT_URI",   "\"https://YOUR_DOMAIN/oauth2redirect\"")
+            buildConfigField ("String", "FACEBOOK_CLIENT_ID",    "\"\"")
+            buildConfigField ("String", "FACEBOOK_REDIRECT_URI", "\"https://YOUR_DOMAIN/oauth2redirect\"")
+            buildConfigField ("String", "FACEBOOK_API_VERSION",  "\"v20.0\"")
+            buildConfigField ("String", "SNAPCHAT_CLIENT_ID",    "\"\"")
+            buildConfigField ("String", "SNAPCHAT_REDIRECT_URI", "\"https://YOUR_DOMAIN/oauth2redirect\"")
+            buildConfigField ("String", "TIKTOK_CLIENT_KEY",     "\"\"")
+            buildConfigField ("String", "TIKTOK_REDIRECT_URI",   "\"https://YOUR_DOMAIN/oauth2redirect\"")
         }
         release {
             isMinifyEnabled = true
@@ -94,6 +106,14 @@ android {
             buildConfigField("String", "DEV_TWILIO_TOKEN", "\"\"")
             buildConfigField("String", "DEV_SENDGRID_KEY", "\"\"")
             buildConfigField("boolean", "DEMO_MODE", "false")  // demo off for "release"
+
+            buildConfigField ("String", "FACEBOOK_CLIENT_ID",    "\"\"")
+            buildConfigField ("String", "FACEBOOK_REDIRECT_URI", "\"https://YOUR_DOMAIN/oauth2redirect\"")
+            buildConfigField ("String", "FACEBOOK_API_VERSION",  "\"v20.0\"")
+            buildConfigField ("String", "SNAPCHAT_CLIENT_ID",    "\"\"")
+            buildConfigField ("String", "SNAPCHAT_REDIRECT_URI", "\"https://YOUR_DOMAIN/oauth2redirect\"")
+            buildConfigField ("String", "TIKTOK_CLIENT_KEY",     "\"\"")
+            buildConfigField ("String", "TIKTOK_REDIRECT_URI",   "\"https://YOUR_DOMAIN/oauth2redirect\"")
         }
     }
 }

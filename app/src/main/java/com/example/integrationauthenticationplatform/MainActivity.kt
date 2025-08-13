@@ -80,18 +80,17 @@ class MainActivity : ComponentActivity() {
         android.util.Log.d("Auth123", "Main received group=$groupName, updating UI")
         vm.onOAuthSuccess(group, credJson)
 
-        // clear so we don’t process again next resume
         setIntent(Intent(this, javaClass))
     }
 
     private fun handleOAuthRequest(group: ProviderGroup, def: ServiceDef) {
         val cfg = when (def.id) {
             "x"         -> OAuthConfigs.x
-            "linkedin"  -> OAuthConfigs.demo
-            "instagram" -> OAuthConfigs.demo
-            "tiktok"    -> OAuthConfigs.demo
-            "facebook"  -> OAuthConfigs.demo
-            "snapchat"  -> OAuthConfigs.demo
+            "linkedin"  -> OAuthConfigs.linkedin
+            "instagram" -> OAuthConfigs.instagram
+            "tiktok"    -> OAuthConfigs.tiktok
+            "facebook"  -> OAuthConfigs.facebook
+            "snapchat"  -> OAuthConfigs.snapchat
             else -> when (group) {
                 ProviderGroup.Google    -> OAuthConfigs.google
                 ProviderGroup.Microsoft -> OAuthConfigs.microsoft
