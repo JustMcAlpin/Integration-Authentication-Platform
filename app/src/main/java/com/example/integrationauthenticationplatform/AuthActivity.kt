@@ -24,6 +24,7 @@ class AuthActivity : ComponentActivity() {
     private lateinit var tokenEndpoint: String
     private lateinit var scopes: List<String>
 
+    private lateinit var serviceId: String
     private lateinit var authService: AuthorizationService
     private val prefs by lazy { getSharedPreferences("auth_pkce", MODE_PRIVATE) }
 
@@ -33,6 +34,7 @@ class AuthActivity : ComponentActivity() {
         // lil spinner so it’s not a blank screen
         setContent { Surface { CircularProgressIndicator() } }
 
+        serviceId = intent.getStringExtra("serviceId") ?: ""
         authService = AuthorizationService(this)
 
         // If launched by browser redirect, handle immediately
@@ -42,12 +44,12 @@ class AuthActivity : ComponentActivity() {
         }
 
         // Launched from Main with config extras
-        groupName    = intent.getStringExtra("group")!!
-        clientId     = intent.getStringExtra("clientId")!!
-        redirectUri  = intent.getStringExtra("redirectUri")!!
-        authEndpoint = intent.getStringExtra("authEndpoint")!!
-        tokenEndpoint= intent.getStringExtra("tokenEndpoint")!!
-        scopes       = intent.getStringExtra("scopes")!!.split(" ")
+        groupName     = intent.getStringExtra("group")!!
+        clientId      = intent.getStringExtra("clientId")!!
+        redirectUri   = intent.getStringExtra("redirectUri")!!
+        authEndpoint  = intent.getStringExtra("authEndpoint")!!
+        tokenEndpoint = intent.getStringExtra("tokenEndpoint")!!
+        scopes        = intent.getStringExtra("scopes")!!.split(" ")
 
         startAuth()
     }
@@ -70,10 +72,13 @@ class AuthActivity : ComponentActivity() {
             Uri.parse(tokenEndpoint)
         )
 
-        // PKCE: generate + stash verifier tied to state (group)
+        // PKCE: generate + stash verifier tied to state (serviceId if present)
         val codeVerifier = generateCodeVerifier()
-        prefs.edit().putString("pkce_verifier_$groupName", codeVerifier).apply()
+        val state = if (serviceId.isNotBlank()) serviceId else groupName
+        prefs.edit().putString("pkce_verifier_$state", codeVerifier).apply()
 
+        // pull through any additional params (e.g., prompt, access_type)
+        @Suppress("UNCHECKED_CAST")
         val extras = (intent.getSerializableExtra("extraParams") as? HashMap<String, String>)
             ?.toMutableMap() ?: mutableMapOf()
         val prompt = extras.remove("prompt")
@@ -86,11 +91,10 @@ class AuthActivity : ComponentActivity() {
         ).setScopes(scopes)
 
         if (!prompt.isNullOrBlank()) builder.setPromptValues(prompt)
-        builder.setState(groupName)
+        builder.setState(state)
         builder.setCodeVerifier(codeVerifier)
 
         val req = builder.setAdditionalParameters(extras).build()
-        android.util.Log.d("Auth123", "AUTH: launch -> ${req.toUri()}")
         startActivity(authService.getAuthorizationRequestIntent(req))
     }
 
@@ -101,7 +105,7 @@ class AuthActivity : ComponentActivity() {
         if (uri == null) { finishWithCanceled(); return }
 
         val code  = uri.getQueryParameter("code") ?: run { finishWithCanceled(); return }
-        val state = uri.getQueryParameter("state") ?: groupName
+        val state = uri.getQueryParameter("state") ?: serviceId.ifBlank { groupName }
 
         val verifier = prefs.getString("pkce_verifier_$state", null)
         if (verifier.isNullOrBlank()) {
@@ -139,9 +143,9 @@ class AuthActivity : ComponentActivity() {
                 }
             """.trimIndent()
 
-            // ✅ Return to Main via ActivityResult
             val result = Intent().apply {
-                putExtra("group", state)
+                putExtra("serviceId", state)     // return per-service id when we used it as state
+                putExtra("group", groupName)     // still send group for legacy fan-out path
                 putExtra("credentialJson", payload)
             }
             setResult(RESULT_OK, result)
@@ -151,10 +155,14 @@ class AuthActivity : ComponentActivity() {
 
     private fun generateCodeVerifier(): String {
         val bytes = ByteArray(32).also { SecureRandom().nextBytes(it) }
-        return Base64.encodeToString(bytes, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
+        return Base64.encodeToString(
+            bytes,
+            Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
+        )
     }
 
     private fun finishWithCanceled() {
-        setResult(RESULT_CANCELED); finish()
+        setResult(RESULT_CANCELED)
+        finish()
     }
 }

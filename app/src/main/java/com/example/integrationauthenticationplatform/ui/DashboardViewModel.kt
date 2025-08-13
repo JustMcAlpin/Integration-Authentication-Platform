@@ -3,6 +3,7 @@ package com.example.integrationauthenticationplatform.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.integrationauthenticationplatform.BuildConfig
 import com.example.integrationauthenticationplatform.data.CredentialRepo
 import com.example.integrationauthenticationplatform.data.RevokeClient
 import com.example.integrationauthenticationplatform.model.*
@@ -31,10 +32,27 @@ class DashboardViewModel(private val repo: CredentialRepo) : ViewModel() {
             }
             if (!othersUsingGroup && service.group == ProviderGroup.Google) {
                 repo.getDecrypted(service.displayName)?.let { json ->
-                    val refresh = Regex("\"refresh_token\"\\s*:\\s*\"([^\"]*)\"").find(json)?.groupValues?.get(1)
-                    val access  = Regex("\"access_token\"\\s*:\\s*\"([^\"]*)\"").find(json)?.groupValues?.get(1)
+                    val refresh = Regex("\"refresh_token\"\\s*:\\s*\"([^\"]*)\"")
+                        .find(json)?.groupValues?.getOrNull(1)
+                    val access = Regex("\"access_token\"\\s*:\\s*\"([^\"]*)\"")
+                        .find(json)?.groupValues?.getOrNull(1)
                     val token = refresh?.takeIf { it.isNotBlank() } ?: access
-                    if (token != null) RevokeClient.revokeGoogle(token)
+                    if (!token.isNullOrBlank()) RevokeClient.revokeGoogle(token)
+                }
+            }
+
+            // X (Twitter): revoke best-effort if we have a token and client id
+            if (service.id == "x") {
+                repo.getDecrypted(service.displayName)?.let { json ->
+                    val refresh = Regex("\"refresh_token\"\\s*:\\s*\"([^\"]*)\"")
+                        .find(json)?.groupValues?.getOrNull(1)
+                    val access = Regex("\"access_token\"\\s*:\\s*\"([^\"]*)\"")
+                        .find(json)?.groupValues?.getOrNull(1)
+                    val tokenToRevoke = refresh?.takeIf { it.isNotBlank() } ?: access
+                    val clientId = BuildConfig.TWITTER_CLIENT_ID
+                    if (!tokenToRevoke.isNullOrBlank() && clientId.isNotBlank()) {
+                        RevokeClient.revokeX(tokenToRevoke, clientId)
+                    }
                 }
             }
 
@@ -63,7 +81,6 @@ class DashboardViewModel(private val repo: CredentialRepo) : ViewModel() {
                 repo.save(service.displayName, "api_key", json)
                 setConnected(listOf(service.id), true)
             }
-            // else: optionally emit a snackbar or the like
         }
     }
 
@@ -83,6 +100,14 @@ class DashboardViewModel(private val repo: CredentialRepo) : ViewModel() {
         val existing = repo.all().associateBy { it.service }
         _services.value = SERVICES.map { s ->
             ServiceUi(s, connected = existing.containsKey(s.displayName))
+        }
+    }
+
+    fun onOAuthSuccessForService(serviceId: String, credentialJson: String) {
+        viewModelScope.launch {
+            val service = SERVICES.firstOrNull { it.id == serviceId } ?: return@launch
+            repo.save(service.displayName, "oauth", credentialJson)
+            setConnected(listOf(service.id), true)
         }
     }
 

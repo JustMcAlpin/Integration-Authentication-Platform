@@ -11,21 +11,33 @@ android {
 
     defaultConfig {
         applicationId = "com.example.integrationauthenticationplatform"
-        minSdk = 26   // Base64 needs 26+
+        minSdk = 26
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
+        // OAuth redirect schemes
+        manifestPlaceholders["appAuthRedirectScheme"] =
+            "com.googleusercontent.apps.990112477927-oe9qfesiink1jrdasu38h7jh12cck4m9"
+        manifestPlaceholders["msAuthRedirectScheme"] = "com.example.integrationauth"
+
+        // BuildConfig constants (read from gradle.properties or env)
         buildConfigField(
             "String",
             "ENCRYPTION_KEY_B64",
             "\"${project.findProperty("ENCRYPTION_KEY") ?: System.getenv("ENCRYPTION_KEY") ?: ""}\""
         )
-
-        manifestPlaceholders["appAuthRedirectScheme"] = "com.googleusercontent.apps.990112477927-oe9qfesiink1jrdasu38h7jh12cck4m9"
-        manifestPlaceholders["msAuthRedirectScheme"] = "com.example.integrationauth"
-
+        buildConfigField(
+            "String",
+            "LINKEDIN_CLIENT_ID",
+            "\"${project.findProperty("LINKEDIN_CLIENT_ID") ?: System.getenv("LINKEDIN_CLIENT_ID") ?: ""}\""
+        )
+        buildConfigField(
+            "String",
+            "TWITTER_CLIENT_ID",
+            "\"${project.findProperty("TWITTER_CLIENT_ID") ?: System.getenv("TWITTER_CLIENT_ID") ?: ""}\""
+        )
     }
 
     buildFeatures {
@@ -33,26 +45,31 @@ android {
         buildConfig = true
     }
 
-    composeOptions { kotlinCompilerExtensionVersion = "1.5.14" }
+    // Compose Compiler version is handled by the compose-compiler plugin;
+    // you can delete this block if you'd like.
+    // composeOptions { kotlinCompilerExtensionVersion = "1.5.14" }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
     kotlinOptions { jvmTarget = "11" }
+
     buildTypes {
         debug {
-            // Optional dev autofill (read from env or local gradle.properties)
             buildConfigField(
-                "String", "DEV_TWILIO_SID",
+                "String",
+                "DEV_TWILIO_SID",
                 "\"${System.getenv("DEV_TWILIO_SID") ?: (project.findProperty("DEV_TWILIO_SID") ?: "")}\""
             )
             buildConfigField(
-                "String", "DEV_TWILIO_TOKEN",
+                "String",
+                "DEV_TWILIO_TOKEN",
                 "\"${System.getenv("DEV_TWILIO_TOKEN") ?: (project.findProperty("DEV_TWILIO_TOKEN") ?: "")}\""
             )
             buildConfigField(
-                "String", "DEV_SENDGRID_KEY",
+                "String",
+                "DEV_SENDGRID_KEY",
                 "\"${System.getenv("DEV_SENDGRID_KEY") ?: (project.findProperty("DEV_SENDGRID_KEY") ?: "")}\""
             )
         }
@@ -62,7 +79,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // Never ship dev autofill in release
             buildConfigField("String", "DEV_TWILIO_SID", "\"\"")
             buildConfigField("String", "DEV_TWILIO_TOKEN", "\"\"")
             buildConfigField("String", "DEV_SENDGRID_KEY", "\"\"")
@@ -77,22 +93,25 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.compiler:compiler:1.5.15")
     debugImplementation("androidx.compose.ui:ui-tooling")
+
     // --- Lifecycle / Coroutines ---
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+
     // --- Room ---
     implementation("androidx.room:room-ktx:2.6.1")
     implementation("androidx.room:room-runtime:2.6.1")
     kapt("androidx.room:room-compiler:2.6.1")
-    // --- Tests ---
-    testImplementation("junit:junit:4.13.2")
+
+    // --- Networking / OAuth ---
     implementation("io.ktor:ktor-client-android:2.3.11")
     implementation("io.ktor:ktor-client-content-negotiation:2.3.11")
     implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.11")
-    implementation("androidx.compose.material:material-icons-extended")
     implementation("net.openid:appauth:0.11.1")
+
+    // --- UI extras ---
+    implementation("androidx.compose.material:material-icons-extended")
     implementation("com.google.android.material:material:1.12.0")
 }

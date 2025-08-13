@@ -1,5 +1,6 @@
 package com.example.integrationauthenticationplatform.oauth
 
+import com.example.integrationauthenticationplatform.BuildConfig
 import com.example.integrationauthenticationplatform.model.ProviderGroup
 
 data class OAuthCfg(
@@ -44,4 +45,23 @@ object OAuthConfigs {
         extraParams = mapOf("prompt" to "select_account")
     )
 
+    val linkedin = OAuthCfg(
+        group = ProviderGroup.Social,
+        clientId = BuildConfig.LINKEDIN_CLIENT_ID,
+        redirectUri = "com.example.integrationauth://oauth2redirect",
+        authEndpoint = "https://www.linkedin.com/oauth/v2/authorization",
+        tokenEndpoint = "https://www.linkedin.com/oauth/v2/accessToken",
+        scopes = listOf("r_liteprofile", "r_emailaddress", "offline_access")
+        // LinkedIn PKCE for native apps is supported. :contentReference[oaicite:5]{index=5}
+    )
+
+    val x = OAuthCfg(
+        group = ProviderGroup.Social,
+        clientId = BuildConfig.TWITTER_CLIENT_ID,
+        redirectUri = "com.example.integrationauth://oauth2redirect",
+        authEndpoint = "https://twitter.com/i/oauth2/authorize",
+        tokenEndpoint = "https://api.x.com/2/oauth2/token",
+        scopes = listOf("users.read", "tweet.read", "offline.access")
+        // X OAuth2 + PKCE & refresh/revoke endpoints. :contentReference[oaicite:6]{index=6}
+    )
 }

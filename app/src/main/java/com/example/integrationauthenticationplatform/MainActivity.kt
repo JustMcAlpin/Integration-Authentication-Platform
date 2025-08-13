@@ -28,23 +28,32 @@ class MainActivity : ComponentActivity() {
         DashboardViewModel.Factory(repo)
     }
 
-    // backup path (still fine to keep)
+    // Single unified launcher: prefers per-service result, falls back to group
     private val authLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { res ->
         android.util.Log.d("Auth123", "result=${res.resultCode} extras=${res.data?.extras}")
-        if (res.resultCode == RESULT_OK) {
-            val groupName = res.data?.getStringExtra("group") ?: return@registerForActivityResult
-            val credJson  = res.data?.getStringExtra("credentialJson") ?: return@registerForActivityResult
-            val group = runCatching { ProviderGroup.valueOf(groupName) }.getOrNull() ?: return@registerForActivityResult
-            vm.onOAuthSuccess(group, credJson)
+        if (res.resultCode != RESULT_OK) return@registerForActivityResult
+
+        val data = res.data ?: return@registerForActivityResult
+        val credJson = data.getStringExtra("credentialJson") ?: return@registerForActivityResult
+
+        val serviceId = data.getStringExtra("serviceId")
+        if (!serviceId.isNullOrBlank()) {
+            vm.onOAuthSuccessForService(serviceId, credJson)
+            return@registerForActivityResult
         }
+
+        // legacy/group path (Google/Microsoft)
+        val groupName = data.getStringExtra("group") ?: return@registerForActivityResult
+        val group = runCatching { ProviderGroup.valueOf(groupName) }.getOrNull() ?: return@registerForActivityResult
+        vm.onOAuthSuccess(group, credJson)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // also handle if we were launched/resumed with extras right now
+        // still handle old flow if Activity was resumed with extras (safe no-op otherwise)
         consumeOAuthIntent()
 
         setContent {
@@ -64,8 +73,8 @@ class MainActivity : ComponentActivity() {
 
     private fun consumeOAuthIntent() {
         val data = intent ?: return
-        val groupName = data.getStringExtra("group") ?: return
         val credJson  = data.getStringExtra("credentialJson") ?: return
+        val groupName = data.getStringExtra("group") ?: return
         val group = runCatching { ProviderGroup.valueOf(groupName) }.getOrNull() ?: return
 
         android.util.Log.d("Auth123", "Main received group=$groupName, updating UI")
@@ -75,15 +84,20 @@ class MainActivity : ComponentActivity() {
         setIntent(Intent(this, javaClass))
     }
 
-    private fun handleOAuthRequest(group: ProviderGroup, @Suppress("UNUSED_PARAMETER") def: ServiceDef) {
-        val cfg = when (group) {
-            ProviderGroup.Google -> OAuthConfigs.google
-            ProviderGroup.Microsoft -> OAuthConfigs.microsoft
-            else -> return // socials are marked "Needs approval"
+    private fun handleOAuthRequest(group: ProviderGroup, def: ServiceDef) {
+        val cfg = when (def.id) {
+            "x"        -> OAuthConfigs.x
+            "linkedin" -> OAuthConfigs.linkedin
+            else -> when (group) {
+                ProviderGroup.Google    -> OAuthConfigs.google
+                ProviderGroup.Microsoft -> OAuthConfigs.microsoft
+                else -> return
+            }
         }
         val intent = Intent(this, AuthActivity::class.java).apply {
+            putExtra("serviceId", def.id)                 // per-service state
             putExtra("extraParams", HashMap(cfg.extraParams))
-            putExtra("group", cfg.group.name)
+            putExtra("group", cfg.group.name)             // harmless for legacy code path
             putExtra("clientId", cfg.clientId)
             putExtra("redirectUri", cfg.redirectUri)
             putExtra("authEndpoint", cfg.authEndpoint)
